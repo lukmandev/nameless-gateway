@@ -1,0 +1,7 @@
+.idea
+/bin/
+/vendor
+/vendor/coverage.out
+/coverage.out
+.env
+vendor.protogen

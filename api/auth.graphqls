@@ -1,0 +1,25 @@
+type User {
+  id: ID!
+  name: String! 
+}
+
+input LoginInput {
+  name: String!
+}
+
+type LoginResponse {
+  accessToken: String!
+  profile: User!
+}
+
+type GetMeResponse {
+  profile: User!
+}
+
+extend type Query {
+  getMe: GetMeResponse!
+}
+
+extend type Mutation {
+  login(input: LoginInput!): LoginResponse!
+}
