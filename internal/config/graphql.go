@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	graphQLHostEnvName       = "GRAPHQL_HOST"
-	graphQLPortEnvName       = "GRAPHQL_PORT"
+	graphQLHostEnvName       = "HOST"
+	graphQLPortEnvName       = "PORT"
 	graphQLPlaygroundEnvName = "GRAPHQL_PLAYGROUND"
 )
 

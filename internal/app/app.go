@@ -7,15 +7,14 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi/v5"
 	"github.com/lukmandev/nameless/gateway/internal/api"
 	"github.com/lukmandev/nameless/gateway/internal/config"
 )
 
-const defaultPort = "4000"
-
 type App struct {
 	serviceProvider *serviceProvider
-	graphQLServer   *handler.Server
+	graphQLServer   http.Handler
 }
 
 func NewApp(ctx context.Context) (*App, error) {
@@ -36,11 +35,23 @@ func (a *App) initConfig(ctx context.Context) error {
 }
 
 func (a *App) initGraphQL(ctx context.Context) error {
-	resolver := api.NewResolver()
+	resolver := api.NewResolver(a.serviceProvider.AuthService(ctx))
 
 	srv := handler.NewDefaultServer(api.NewExecutableSchema(api.Config{Resolvers: &resolver}))
 
-	a.graphQLServer = srv
+	a.serviceProvider.AuthService(ctx)
+
+	router := chi.NewRouter()
+
+	playgroundEnabled := a.serviceProvider.GraphQLConfig().PlaygroundEnabled()
+
+	if playgroundEnabled {
+		router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
+	}
+
+	router.Handle("/graphql", srv)
+
+	a.graphQLServer = router
 
 	return nil
 }
@@ -67,19 +78,19 @@ func (a *App) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
+func (a *App) initServiceClients(_ context.Context) error {
+	a.serviceProvider = newServiceProvider()
+	return nil
+}
+
 func (a *App) runGraphQL() error {
 	host := a.serviceProvider.GraphQLConfig().Host()
 	port := a.serviceProvider.GraphQLConfig().Port()
-	playgroundEnabled := a.serviceProvider.GraphQLConfig().PlaygroundEnabled()
 
-	if playgroundEnabled {
-		http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
-	}
-
-	http.Handle("/graphql", a.graphQLServer)
+	router := a.graphQLServer
 
 	log.Printf("connect to http://%s:%s/ for GraphQL playground", host, port)
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":"+port, router)
 
 	return err
 }

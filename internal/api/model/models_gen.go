@@ -22,6 +22,9 @@ type Query struct {
 }
 
 type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID               int    `json:"id"`
+	Username         string `json:"username"`
+	Email            string `json:"email"`
+	RegistrationDate string `json:"registration_date"`
+	Verified         bool   `json:"verified"`
 }

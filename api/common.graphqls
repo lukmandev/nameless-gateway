@@ -1,0 +1,9 @@
+
+
+type User {
+    id: Int!
+    username: String!
+    email: String!
+    registration_date: String!
+    verified: Boolean!
+}

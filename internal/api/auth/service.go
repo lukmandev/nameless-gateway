@@ -1,5 +1,15 @@
 package auth
 
-type AuthMutation struct{}
+import "github.com/lukmandev/nameless/gateway/internal/service"
 
-type AuthQuery struct{}
+type AuthMutation struct {
+	authService service.AuthService
+}
+
+type AuthQuery struct {
+	authService service.AuthService
+}
+
+func NewQuery() AuthQuery {
+	return AuthQuery{}
+}
