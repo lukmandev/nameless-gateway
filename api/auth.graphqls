@@ -1,15 +1,16 @@
 
 input LoginInput {
-  name: String!
+  emailOrUsername: String!
+  password: String!
 }
 
 type LoginResponse {
   accessToken: String!
-  profile: User!
+  profile: Profile!
 }
 
 type GetMeResponse {
-  profile: User!
+  profile: Profile!
 }
 
 extend type Query {

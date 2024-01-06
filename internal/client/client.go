@@ -1,11 +1,15 @@
 package client
 
 import (
-	"github.com/lukmandev/nameless-auth/pkg/auth_v1"
-	"github.com/lukmandev/nameless-auth/pkg/user_v1"
+	"github.com/lukmandev/nameless/gateway/internal/client/auth"
 )
 
 type ServiceClients struct {
-	AuthClient auth_v1.AuthV1Client
-	UserClient user_v1.UserV1Client
+	AuthServiceClient auth.AuthServiceClient
+}
+
+func New(authClient auth.AuthServiceClient) *ServiceClients {
+	return &ServiceClients{
+		AuthServiceClient: authClient,
+	}
 }

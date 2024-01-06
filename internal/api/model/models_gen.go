@@ -3,28 +3,29 @@
 package model
 
 type GetMeResponse struct {
-	Profile *User `json:"profile"`
+	Profile *Profile `json:"profile"`
 }
 
 type LoginInput struct {
-	Name string `json:"name"`
+	EmailOrUsername string `json:"emailOrUsername"`
+	Password        string `json:"password"`
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"accessToken"`
-	Profile     *User  `json:"profile"`
+	AccessToken string   `json:"accessToken"`
+	Profile     *Profile `json:"profile"`
 }
 
 type Mutation struct {
 }
 
-type Query struct {
-}
-
-type User struct {
+type Profile struct {
 	ID               int    `json:"id"`
 	Username         string `json:"username"`
 	Email            string `json:"email"`
 	RegistrationDate string `json:"registration_date"`
 	Verified         bool   `json:"verified"`
+}
+
+type Query struct {
 }

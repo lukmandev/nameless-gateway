@@ -11,11 +11,20 @@ type Resolver struct {
 }
 
 func (r *Resolver) Mutation() MutationResolver {
-	return Mutation{}
+	return Mutation{
+		AuthMutation: auth.AuthMutation{
+			AuthService: r.authService,
+		},
+	}
 }
 
 func (r *Resolver) Query() QueryResolver {
-	return Query{}
+	return Query{
+		AuthQuery: auth.AuthQuery{
+			AuthService: r.authService,
+		},
+		UserQuery: user.UserQuery{},
+	}
 }
 
 type Mutation struct {

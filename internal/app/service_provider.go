@@ -7,6 +7,7 @@ import (
 	"github.com/lukmandev/nameless-auth/pkg/auth_v1"
 	"github.com/lukmandev/nameless-auth/pkg/user_v1"
 	"github.com/lukmandev/nameless/gateway/internal/client"
+	authClient "github.com/lukmandev/nameless/gateway/internal/client/auth"
 	"github.com/lukmandev/nameless/gateway/internal/config"
 	"github.com/lukmandev/nameless/gateway/internal/service"
 	"google.golang.org/grpc"
@@ -50,13 +51,12 @@ func (s *serviceProvider) ServiceClients() *client.ServiceClients {
 
 		fmt.Println("Connected to auth service")
 
-		authClient := auth_v1.NewAuthV1Client(conn)
-		userClient := user_v1.NewUserV1Client(conn)
+		authServiceClient := auth_v1.NewAuthV1Client(conn)
+		userServiceClient := user_v1.NewUserV1Client(conn)
 
-		s.serviceClients = &client.ServiceClients{
-			AuthClient: authClient,
-			UserClient: userClient,
-		}
+		newAuthClient := authClient.New(authServiceClient, userServiceClient)
+
+		s.serviceClients = client.New(newAuthClient)
 	}
 
 	return s.serviceClients

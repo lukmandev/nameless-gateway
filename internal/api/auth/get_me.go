@@ -8,8 +8,8 @@ import (
 )
 
 func (q AuthQuery) GetMe(ctx context.Context) (*apiModel.GetMeResponse, error) {
-	q.authService.Login(ctx, &model.LoginInput{})
+	q.AuthService.Login(ctx, &model.LoginInput{})
 	return &apiModel.GetMeResponse{
-		Profile: &apiModel.User{},
+		Profile: &apiModel.Profile{},
 	}, nil
 }
