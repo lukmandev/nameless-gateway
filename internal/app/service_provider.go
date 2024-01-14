@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lukmandev/nameless-auth/pkg/auth_v1"
-	"github.com/lukmandev/nameless-auth/pkg/user_v1"
+	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
+	userDesc "github.com/lukmandev/nameless-auth/pkg/user_v1"
 	"github.com/lukmandev/nameless/gateway/internal/client"
 	authClient "github.com/lukmandev/nameless/gateway/internal/client/auth"
 	"github.com/lukmandev/nameless/gateway/internal/config"
@@ -51,8 +51,8 @@ func (s *serviceProvider) ServiceClients() *client.ServiceClients {
 
 		fmt.Println("Connected to auth service")
 
-		authServiceClient := auth_v1.NewAuthV1Client(conn)
-		userServiceClient := user_v1.NewUserV1Client(conn)
+		authServiceClient := authDesc.NewAuthV1Client(conn)
+		userServiceClient := userDesc.NewUserV1Client(conn)
 
 		newAuthClient := authClient.New(authServiceClient, userServiceClient)
 

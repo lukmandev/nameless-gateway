@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 
-	"github.com/lukmandev/nameless-auth/pkg/auth_v1"
-	"github.com/lukmandev/nameless-auth/pkg/user_v1"
+	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
+	userDesc "github.com/lukmandev/nameless-auth/pkg/user_v1"
 	"github.com/lukmandev/nameless/gateway/internal/model"
 )
 
@@ -13,13 +13,13 @@ type AuthServiceClient interface {
 }
 
 type client struct {
-	authClient auth_v1.AuthV1Client
-	userClient user_v1.UserV1Client
+	authClient authDesc.AuthV1Client
+	userClient userDesc.UserV1Client
 }
 
 func New(
-	authClient auth_v1.AuthV1Client,
-	userClient user_v1.UserV1Client,
+	authClient authDesc.AuthV1Client,
+	userClient userDesc.UserV1Client,
 ) *client {
 	return &client{authClient: authClient, userClient: userClient}
 }
