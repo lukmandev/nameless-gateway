@@ -18,6 +18,7 @@ func ToProfileFromService(profile *serviceModel.Profile) *model.Profile {
 		Username:         profile.Username,
 		Email:            profile.Email,
 		Verified:         profile.Verified,
+		AvatarURL:        profile.AvatarURL,
 		RegistrationDate: profile.RegistrationDate.String(),
 	}
 }

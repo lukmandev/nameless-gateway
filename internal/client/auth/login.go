@@ -4,7 +4,7 @@ import (
 	"context"
 
 	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
-	"github.com/lukmandev/nameless/gateway/internal/client/auth/converter"
+	"github.com/lukmandev/nameless/gateway/internal/client/converter"
 	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 

@@ -7,12 +7,16 @@ import (
 )
 
 func ToProfileFromAuthDesc(input *authCommonDesc.Profile) *model.Profile {
+	var avatarURL *string
+	if input.AvatarUrl != nil {
+		avatarURL = &input.AvatarUrl.Value
+	}
 	return &model.Profile{
 		ID:               input.Id,
 		Username:         input.Username,
 		Email:            input.Email,
 		Verified:         input.Verified,
-		AvatarURL:        &input.AvatarUrl.Value,
+		AvatarURL:        avatarURL,
 		RegistrationDate: input.RegistrationDate.AsTime(),
 	}
 }
