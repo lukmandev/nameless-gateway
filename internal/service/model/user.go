@@ -7,6 +7,7 @@ type Profile struct {
 	Username         string
 	Email            string
 	Verified         bool
+	AvatarURL        *string
 	RegistrationDate time.Time
 }
 

@@ -4,6 +4,7 @@ type Profile {
     id: Int!
     username: String!
     email: String!
+    avatar_url: String
     registration_date: String!
     verified: Boolean!
 }

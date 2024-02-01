@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/lukmandev/nameless/gateway/internal/model"
+	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
 func (s *serv) Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error) {

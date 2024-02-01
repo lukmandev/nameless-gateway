@@ -5,7 +5,7 @@ import (
 
 	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
 	userDesc "github.com/lukmandev/nameless-auth/pkg/user_v1"
-	"github.com/lukmandev/nameless/gateway/internal/model"
+	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
 type AuthServiceClient interface {

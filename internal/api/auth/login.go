@@ -2,16 +2,17 @@ package auth
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
+	"github.com/lukmandev/nameless/gateway/internal/api/converter"
 	"github.com/lukmandev/nameless/gateway/internal/api/model"
-	"github.com/lukmandev/nameless/gateway/internal/converter"
-	// "github.com/lukmandev/nameless/gateway/internal/converter"
 )
 
 func (m AuthMutation) Login(ctx context.Context, input model.LoginInput) (*model.LoginResponse, error) {
 	profile, _, accessToken, err := m.AuthService.Login(ctx, converter.ToLoginInputFromAuthApi(input))
-	fmt.Println("Error", err)
+	if err != nil {
+		return nil, errors.New("SOME ERROR error")
+	}
 	return &model.LoginResponse{
 		AccessToken: accessToken,
 		Profile:     converter.ToProfileFromService(profile),

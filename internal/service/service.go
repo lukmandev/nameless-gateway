@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/lukmandev/nameless/gateway/internal/model"
+	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
 type UserService interface {

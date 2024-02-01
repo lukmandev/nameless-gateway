@@ -20,11 +20,12 @@ type Mutation struct {
 }
 
 type Profile struct {
-	ID               int    `json:"id"`
-	Username         string `json:"username"`
-	Email            string `json:"email"`
-	RegistrationDate string `json:"registration_date"`
-	Verified         bool   `json:"verified"`
+	ID               int     `json:"id"`
+	Username         string  `json:"username"`
+	Email            string  `json:"email"`
+	AvatarURL        *string `json:"avatar_url,omitempty"`
+	RegistrationDate string  `json:"registration_date"`
+	Verified         bool    `json:"verified"`
 }
 
 type Query struct {

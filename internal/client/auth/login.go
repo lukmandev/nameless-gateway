@@ -5,7 +5,7 @@ import (
 
 	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
 	"github.com/lukmandev/nameless/gateway/internal/client/auth/converter"
-	"github.com/lukmandev/nameless/gateway/internal/model"
+	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
 func (c *client) Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error) {
