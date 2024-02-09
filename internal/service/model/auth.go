@@ -5,4 +5,8 @@ type LoginInput struct {
 	Password        string
 }
 
-type LoginResponse struct{}
+type RegisterInput struct {
+	Email    string
+	Username string
+	Password string
+}

@@ -56,7 +56,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Login func(childComplexity int, input model.LoginInput) int
+		Login    func(childComplexity int, input model.LoginInput) int
+		Register func(childComplexity int, input model.RegisterInput) int
 	}
 
 	Profile struct {
@@ -72,10 +73,16 @@ type ComplexityRoot struct {
 		GetByID func(childComplexity int) int
 		GetMe   func(childComplexity int) int
 	}
+
+	RegisterResponse struct {
+		AccessToken func(childComplexity int) int
+		Profile     func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.LoginResponse, error)
+	Register(ctx context.Context, input model.RegisterInput) (*model.RegisterResponse, error)
 }
 type QueryResolver interface {
 	GetMe(ctx context.Context) (*model.GetMeResponse, error)
@@ -134,6 +141,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.LoginInput)), true
 
+	case "Mutation.register":
+		if e.complexity.Mutation.Register == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_register_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Register(childComplexity, args["input"].(model.RegisterInput)), true
+
 	case "Profile.avatar_url":
 		if e.complexity.Profile.AvatarURL == nil {
 			break
@@ -190,6 +209,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetMe(childComplexity), true
 
+	case "RegisterResponse.accessToken":
+		if e.complexity.RegisterResponse.AccessToken == nil {
+			break
+		}
+
+		return e.complexity.RegisterResponse.AccessToken(childComplexity), true
+
+	case "RegisterResponse.profile":
+		if e.complexity.RegisterResponse.Profile == nil {
+			break
+		}
+
+		return e.complexity.RegisterResponse.Profile(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -199,6 +232,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputRegisterInput,
 	)
 	first := true
 
@@ -307,6 +341,17 @@ type LoginResponse {
   profile: Profile!
 }
 
+input RegisterInput {
+  email: String!
+  username: String!
+  password: String!
+}
+
+type RegisterResponse {
+  accessToken: String!
+  profile: Profile!
+}
+
 type GetMeResponse {
   profile: Profile!
 }
@@ -317,6 +362,7 @@ extend type Query {
 
 extend type Mutation {
   login(input: LoginInput!): LoginResponse!
+  register(input: RegisterInput!): RegisterResponse!
 }
 `, BuiltIn: false},
 	{Name: "../../api/common.graphqls", Input: `
@@ -347,6 +393,21 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNLoginInput2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐLoginInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_register_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.RegisterInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNRegisterInput2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRegisterInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -623,6 +684,67 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_register(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Register(rctx, fc.Args["input"].(model.RegisterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.RegisterResponse)
+	fc.Result = res
+	return ec.marshalNRegisterResponse2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRegisterResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_register(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "accessToken":
+				return ec.fieldContext_RegisterResponse_accessToken(ctx, field)
+			case "profile":
+				return ec.fieldContext_RegisterResponse_profile(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RegisterResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_register_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1120,6 +1242,108 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RegisterResponse_accessToken(ctx context.Context, field graphql.CollectedField, obj *model.RegisterResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RegisterResponse_accessToken(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccessToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RegisterResponse_accessToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RegisterResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RegisterResponse_profile(ctx context.Context, field graphql.CollectedField, obj *model.RegisterResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RegisterResponse_profile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Profile)
+	fc.Result = res
+	return ec.marshalNProfile2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProfile(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RegisterResponse_profile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RegisterResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Profile_id(ctx, field)
+			case "username":
+				return ec.fieldContext_Profile_username(ctx, field)
+			case "email":
+				return ec.fieldContext_Profile_email(ctx, field)
+			case "avatar_url":
+				return ec.fieldContext_Profile_avatar_url(ctx, field)
+			case "registration_date":
+				return ec.fieldContext_Profile_registration_date(ctx, field)
+			case "verified":
+				return ec.fieldContext_Profile_verified(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Profile", field.Name)
 		},
 	}
 	return fc, nil
@@ -2932,6 +3156,47 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj interface{}) (model.RegisterInput, error) {
+	var it model.RegisterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "username", "password"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "username":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Username = data
+		case "password":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Password = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3045,6 +3310,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "login":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_login(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "register":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_register(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -3204,6 +3476,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var registerResponseImplementors = []string{"RegisterResponse"}
+
+func (ec *executionContext) _RegisterResponse(ctx context.Context, sel ast.SelectionSet, obj *model.RegisterResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, registerResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RegisterResponse")
+		case "accessToken":
+			out.Values[i] = ec._RegisterResponse_accessToken(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "profile":
+			out.Values[i] = ec._RegisterResponse_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3628,6 +3944,25 @@ func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋlukmandevᚋnamele
 		return graphql.Null
 	}
 	return ec._Profile(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRegisterInput2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRegisterInput(ctx context.Context, v interface{}) (model.RegisterInput, error) {
+	res, err := ec.unmarshalInputRegisterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRegisterResponse2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRegisterResponse(ctx context.Context, sel ast.SelectionSet, v model.RegisterResponse) graphql.Marshaler {
+	return ec._RegisterResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRegisterResponse2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRegisterResponse(ctx context.Context, sel ast.SelectionSet, v *model.RegisterResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RegisterResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

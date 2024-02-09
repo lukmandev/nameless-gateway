@@ -30,3 +30,14 @@ type Profile struct {
 
 type Query struct {
 }
+
+type RegisterInput struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type RegisterResponse struct {
+	AccessToken string   `json:"accessToken"`
+	Profile     *Profile `json:"profile"`
+}

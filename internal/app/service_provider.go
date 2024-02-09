@@ -15,7 +15,8 @@ import (
 )
 
 type serviceProvider struct {
-	graphQLConfig config.GraphQLConfig
+	graphQLConfig          config.GraphQLConfig
+	externalServicesConfig config.ExternalServicesConfig
 
 	serviceClients *client.ServiceClients
 
@@ -38,10 +39,22 @@ func (s *serviceProvider) GraphQLConfig() config.GraphQLConfig {
 	return s.graphQLConfig
 }
 
+func (s *serviceProvider) ExternalServicesConfig() config.ExternalServicesConfig {
+	if s.externalServicesConfig == nil {
+		conf, err := config.NewExternalServicesConfig()
+		if err != nil {
+			log.Fatalf("Failed to create a external services config: %s", err.Error())
+		}
+		s.externalServicesConfig = conf
+	}
+
+	return s.externalServicesConfig
+}
+
 func (s *serviceProvider) ServiceClients() *client.ServiceClients {
 	if s.serviceClients == nil {
 		conn, err := grpc.Dial(
-			fmt.Sprintf(":%d", 50051),
+			s.ExternalServicesConfig().AuthServiceHost(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 

@@ -11,4 +11,5 @@ type UserService interface {
 
 type AuthService interface {
 	Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error)
+	Register(ctx context.Context, input *model.RegisterInput) (*model.Profile, string, string, error)
 }

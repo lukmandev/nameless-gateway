@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/lukmandev/nameless/gateway/internal/api"
 	"github.com/lukmandev/nameless/gateway/internal/config"
+	"github.com/lukmandev/nameless/gateway/internal/middleware"
 )
 
 type App struct {
@@ -42,6 +43,8 @@ func (a *App) initGraphQL(ctx context.Context) error {
 	a.serviceProvider.AuthService(ctx)
 
 	router := chi.NewRouter()
+
+	router.Use(middleware.AuthMiddleware())
 
 	playgroundEnabled := a.serviceProvider.GraphQLConfig().PlaygroundEnabled()
 
