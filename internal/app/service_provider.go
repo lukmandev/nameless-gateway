@@ -8,6 +8,7 @@ import (
 	userDesc "github.com/lukmandev/nameless-auth/pkg/user_v1"
 	"github.com/lukmandev/nameless/gateway/internal/client"
 	authClient "github.com/lukmandev/nameless/gateway/internal/client/auth"
+	userClient "github.com/lukmandev/nameless/gateway/internal/client/user"
 	"github.com/lukmandev/nameless/gateway/internal/config"
 	"github.com/lukmandev/nameless/gateway/internal/service"
 	"google.golang.org/grpc"
@@ -21,6 +22,7 @@ type serviceProvider struct {
 	serviceClients *client.ServiceClients
 
 	authService service.AuthService
+	userService service.UserService
 }
 
 func newServiceProvider() *serviceProvider {
@@ -67,9 +69,10 @@ func (s *serviceProvider) ServiceClients() *client.ServiceClients {
 		authServiceClient := authDesc.NewAuthV1Client(conn)
 		userServiceClient := userDesc.NewUserV1Client(conn)
 
-		newAuthClient := authClient.New(authServiceClient, userServiceClient)
+		newAuthClient := authClient.New(authServiceClient)
+		newUserClient := userClient.New(userServiceClient)
 
-		s.serviceClients = client.New(newAuthClient)
+		s.serviceClients = client.New(newAuthClient, newUserClient)
 	}
 
 	return s.serviceClients

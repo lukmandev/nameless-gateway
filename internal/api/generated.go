@@ -69,8 +69,15 @@ type ComplexityRoot struct {
 		Verified         func(childComplexity int) int
 	}
 
+	PublicProfile struct {
+		AvatarURL        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		RegistrationDate func(childComplexity int) int
+		Username         func(childComplexity int) int
+	}
+
 	Query struct {
-		GetByID func(childComplexity int) int
+		GetByID func(childComplexity int, input int) int
 		GetMe   func(childComplexity int) int
 	}
 
@@ -86,7 +93,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	GetMe(ctx context.Context) (*model.GetMeResponse, error)
-	GetByID(ctx context.Context) (*model.Profile, error)
+	GetByID(ctx context.Context, input int) (*model.PublicProfile, error)
 }
 
 type executableSchema struct {
@@ -195,12 +202,45 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Profile.Verified(childComplexity), true
 
+	case "PublicProfile.avatar_url":
+		if e.complexity.PublicProfile.AvatarURL == nil {
+			break
+		}
+
+		return e.complexity.PublicProfile.AvatarURL(childComplexity), true
+
+	case "PublicProfile.id":
+		if e.complexity.PublicProfile.ID == nil {
+			break
+		}
+
+		return e.complexity.PublicProfile.ID(childComplexity), true
+
+	case "PublicProfile.registration_date":
+		if e.complexity.PublicProfile.RegistrationDate == nil {
+			break
+		}
+
+		return e.complexity.PublicProfile.RegistrationDate(childComplexity), true
+
+	case "PublicProfile.username":
+		if e.complexity.PublicProfile.Username == nil {
+			break
+		}
+
+		return e.complexity.PublicProfile.Username(childComplexity), true
+
 	case "Query.getById":
 		if e.complexity.Query.GetByID == nil {
 			break
 		}
 
-		return e.complexity.Query.GetByID(childComplexity), true
+		args, err := ec.field_Query_getById_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetByID(childComplexity, args["input"].(int)), true
 
 	case "Query.getMe":
 		if e.complexity.Query.GetMe == nil {
@@ -374,10 +414,17 @@ type Profile {
     avatar_url: String
     registration_date: String!
     verified: Boolean!
+}
+
+type PublicProfile {
+    id: Int!
+    username: String!
+    avatar_url: String
+    registration_date: String!
 }`, BuiltIn: false},
 	{Name: "../../api/user.graphqls", Input: `
 extend type Query {
-  getById: Profile!
+  getById(input: Int!): PublicProfile!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -428,6 +475,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1012,6 +1074,179 @@ func (ec *executionContext) fieldContext_Profile_verified(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _PublicProfile_id(ctx context.Context, field graphql.CollectedField, obj *model.PublicProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PublicProfile_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PublicProfile_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PublicProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PublicProfile_username(ctx context.Context, field graphql.CollectedField, obj *model.PublicProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PublicProfile_username(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PublicProfile_username(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PublicProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PublicProfile_avatar_url(ctx context.Context, field graphql.CollectedField, obj *model.PublicProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PublicProfile_avatar_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvatarURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PublicProfile_avatar_url(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PublicProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PublicProfile_registration_date(ctx context.Context, field graphql.CollectedField, obj *model.PublicProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PublicProfile_registration_date(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RegistrationDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PublicProfile_registration_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PublicProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getMe(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getMe(ctx, field)
 	if err != nil {
@@ -1074,7 +1309,7 @@ func (ec *executionContext) _Query_getById(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetByID(rctx)
+		return ec.resolvers.Query().GetByID(rctx, fc.Args["input"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1086,9 +1321,9 @@ func (ec *executionContext) _Query_getById(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Profile)
+	res := resTmp.(*model.PublicProfile)
 	fc.Result = res
-	return ec.marshalNProfile2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProfile(ctx, field.Selections, res)
+	return ec.marshalNPublicProfile2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐPublicProfile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_getById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1100,20 +1335,27 @@ func (ec *executionContext) fieldContext_Query_getById(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Profile_id(ctx, field)
+				return ec.fieldContext_PublicProfile_id(ctx, field)
 			case "username":
-				return ec.fieldContext_Profile_username(ctx, field)
-			case "email":
-				return ec.fieldContext_Profile_email(ctx, field)
+				return ec.fieldContext_PublicProfile_username(ctx, field)
 			case "avatar_url":
-				return ec.fieldContext_Profile_avatar_url(ctx, field)
+				return ec.fieldContext_PublicProfile_avatar_url(ctx, field)
 			case "registration_date":
-				return ec.fieldContext_Profile_registration_date(ctx, field)
-			case "verified":
-				return ec.fieldContext_Profile_verified(ctx, field)
+				return ec.fieldContext_PublicProfile_registration_date(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Profile", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type PublicProfile", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3405,6 +3647,57 @@ func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var publicProfileImplementors = []string{"PublicProfile"}
+
+func (ec *executionContext) _PublicProfile(ctx context.Context, sel ast.SelectionSet, obj *model.PublicProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, publicProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PublicProfile")
+		case "id":
+			out.Values[i] = ec._PublicProfile_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "username":
+			out.Values[i] = ec._PublicProfile_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avatar_url":
+			out.Values[i] = ec._PublicProfile_avatar_url(ctx, field, obj)
+		case "registration_date":
+			out.Values[i] = ec._PublicProfile_registration_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3932,10 +4225,6 @@ func (ec *executionContext) marshalNLoginResponse2ᚖgithubᚗcomᚋlukmandevᚋ
 	return ec._LoginResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProfile2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProfile(ctx context.Context, sel ast.SelectionSet, v model.Profile) graphql.Marshaler {
-	return ec._Profile(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProfile(ctx context.Context, sel ast.SelectionSet, v *model.Profile) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -3944,6 +4233,20 @@ func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋlukmandevᚋnamele
 		return graphql.Null
 	}
 	return ec._Profile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPublicProfile2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐPublicProfile(ctx context.Context, sel ast.SelectionSet, v model.PublicProfile) graphql.Marshaler {
+	return ec._PublicProfile(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPublicProfile2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐPublicProfile(ctx context.Context, sel ast.SelectionSet, v *model.PublicProfile) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PublicProfile(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNRegisterInput2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRegisterInput(ctx context.Context, v interface{}) (model.RegisterInput, error) {

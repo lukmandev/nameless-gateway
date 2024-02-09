@@ -36,7 +36,7 @@ func (a *App) initConfig(ctx context.Context) error {
 }
 
 func (a *App) initGraphQL(ctx context.Context) error {
-	resolver := api.NewResolver(a.serviceProvider.AuthService(ctx))
+	resolver := api.NewResolver(a.serviceProvider.AuthService(ctx), a.serviceProvider.UserService(ctx))
 
 	srv := handler.NewDefaultServer(api.NewExecutableSchema(api.Config{Resolvers: &resolver}))
 

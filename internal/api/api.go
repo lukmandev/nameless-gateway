@@ -8,6 +8,7 @@ import (
 
 type Resolver struct {
 	authService service.AuthService
+	userService service.UserService
 }
 
 func (r *Resolver) Mutation() MutationResolver {
@@ -23,7 +24,9 @@ func (r *Resolver) Query() QueryResolver {
 		AuthQuery: auth.AuthQuery{
 			AuthService: r.authService,
 		},
-		UserQuery: user.UserQuery{},
+		UserQuery: user.UserQuery{
+			UserService: r.userService,
+		},
 	}
 }
 
@@ -37,8 +40,10 @@ type Query struct {
 
 func NewResolver(
 	authService service.AuthService,
+	userService service.UserService,
 ) Resolver {
 	return Resolver{
 		authService: authService,
+		userService: userService,
 	}
 }

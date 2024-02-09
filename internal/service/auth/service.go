@@ -6,11 +6,11 @@ import (
 )
 
 type serv struct {
-	clients *client.ServiceClients
+	authClient client.AuthServiceClient
 }
 
-func NewService(clients *client.ServiceClients) service.AuthService {
+func NewService(authClient client.AuthServiceClient) service.AuthService {
 	return &serv{
-		clients: clients,
+		authClient: authClient,
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func (s *serv) Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error) {
-	profile, refreshToken, accessToken, err := s.clients.AuthServiceClient.Login(ctx, input)
+	profile, refreshToken, accessToken, err := s.authClient.Login(ctx, input)
 	if err != nil {
 		return nil, "", "", err
 	}

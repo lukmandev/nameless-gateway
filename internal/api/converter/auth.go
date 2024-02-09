@@ -20,13 +20,8 @@ func ToRegisterInputFromAuthHandler(input model.RegisterInput) *serviceModel.Reg
 	}
 }
 
-func ToProfileFromService(profile *serviceModel.Profile) *model.Profile {
-	return &model.Profile{
-		ID:               int(profile.ID),
-		Username:         profile.Username,
-		Email:            profile.Email,
-		Verified:         profile.Verified,
-		AvatarURL:        profile.AvatarURL,
-		RegistrationDate: profile.RegistrationDate.String(),
+func ToGetMeInputFromAuthHandler(accessToken string) *serviceModel.GetMeInput {
+	return &serviceModel.GetMeInput{
+		AccessToken: accessToken,
 	}
 }

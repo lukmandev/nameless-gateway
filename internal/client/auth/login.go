@@ -8,7 +8,7 @@ import (
 	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
-func (c *client) Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error) {
+func (c *cli) Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error) {
 	res, err := c.authClient.Login(ctx, &authDesc.LoginRequest{
 		Input: &authDesc.LoginInput{
 			EmailOrUsername: input.EmailOrUsername,

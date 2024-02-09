@@ -10,3 +10,7 @@ type RegisterInput struct {
 	Username string
 	Password string
 }
+
+type GetMeInput struct {
+	AccessToken string
+}

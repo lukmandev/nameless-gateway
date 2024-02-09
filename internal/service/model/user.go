@@ -14,5 +14,6 @@ type Profile struct {
 type PublicProfile struct {
 	ID               int64
 	Username         string
+	AvatarURL        *string
 	RegistrationDate time.Time
 }

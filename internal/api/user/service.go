@@ -1,3 +1,7 @@
 package user
 
-type UserQuery struct{}
+import "github.com/lukmandev/nameless/gateway/internal/service"
+
+type UserQuery struct {
+	UserService service.UserService
+}

@@ -1,15 +1,29 @@
 package client
 
 import (
-	"github.com/lukmandev/nameless/gateway/internal/client/auth"
+	"context"
+
+	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
-type ServiceClients struct {
-	AuthServiceClient auth.AuthServiceClient
+type AuthServiceClient interface {
+	Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error)
+	Register(ctx context.Context, input *model.RegisterInput) (*model.Profile, string, string, error)
+	GetMe(ctx context.Context, input *model.GetMeInput) (*model.Profile, error)
 }
 
-func New(authClient auth.AuthServiceClient) *ServiceClients {
+type UserServiceClient interface {
+	GetByID(ctx context.Context, id int64) (*model.PublicProfile, error)
+}
+
+type ServiceClients struct {
+	AuthServiceClient AuthServiceClient
+	UserServiceClient UserServiceClient
+}
+
+func New(authClient AuthServiceClient, userClient UserServiceClient) *ServiceClients {
 	return &ServiceClients{
 		AuthServiceClient: authClient,
+		UserServiceClient: userClient,
 	}
 }

@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,8 @@ type CookieAccess struct {
 	Writer     http.ResponseWriter
 	IsLoggedIn bool
 	UserId     uint64
+
+	AccessToken string
 }
 
 func (access *CookieAccess) SetRefreshToken(token string) {
@@ -31,8 +34,17 @@ func (access *CookieAccess) SetRefreshToken(token string) {
 func AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authorizationHeader := r.Header["Authorization"]
+			accessToken := ""
+			if len(authorizationHeader) > 0 {
+				tokenParts := strings.Split(authorizationHeader[0], " ")
+				if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
+					accessToken = tokenParts[1]
+				}
+			}
 			cookieAccess := &CookieAccess{
-				Writer: w,
+				Writer:      w,
+				AccessToken: accessToken,
 			}
 			ctx := context.WithValue(r.Context(), CookieAccessKey, cookieAccess)
 

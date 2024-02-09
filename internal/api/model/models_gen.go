@@ -28,6 +28,13 @@ type Profile struct {
 	Verified         bool    `json:"verified"`
 }
 
+type PublicProfile struct {
+	ID               int     `json:"id"`
+	Username         string  `json:"username"`
+	AvatarURL        *string `json:"avatar_url,omitempty"`
+	RegistrationDate string  `json:"registration_date"`
+}
+
 type Query struct {
 }
 
