@@ -36,15 +36,18 @@ func (a *App) initConfig(ctx context.Context) error {
 }
 
 func (a *App) initGraphQL(ctx context.Context) error {
-	resolver := api.NewResolver(a.serviceProvider.AuthService(ctx), a.serviceProvider.UserService(ctx))
+	authService := a.serviceProvider.AuthService(ctx)
+	userService := a.serviceProvider.UserService(ctx)
+	talentService := a.serviceProvider.TalentService(ctx)
+	movieService := a.serviceProvider.MovieService(ctx)
+	resolver := api.NewResolver(authService, userService, movieService, talentService)
 
 	srv := handler.NewDefaultServer(api.NewExecutableSchema(api.Config{Resolvers: &resolver}))
-
-	a.serviceProvider.AuthService(ctx)
 
 	router := chi.NewRouter()
 
 	router.Use(middleware.AuthMiddleware())
+	router.Use(middleware.TalentLoaderMiddleware(talentService))
 
 	playgroundEnabled := a.serviceProvider.GraphQLConfig().PlaygroundEnabled()
 

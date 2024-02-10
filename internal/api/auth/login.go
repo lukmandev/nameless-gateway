@@ -16,6 +16,7 @@ func (m AuthMutation) Login(ctx context.Context, input model.LoginInput) (*model
 		return nil, errors.New("SOME ERROR error")
 	}
 	cookieAccess.SetRefreshToken(refreshToken)
+
 	return &model.LoginResponse{
 		AccessToken: accessToken,
 		Profile:     converter.ToProfileFromService(profile),

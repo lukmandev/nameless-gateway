@@ -38,9 +38,14 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Cinematographer() CinematographerResolver
+	Composer() ComposerResolver
 	Director() DirectorResolver
 	Mutation() MutationResolver
+	Producer() ProducerResolver
 	Query() QueryResolver
+	Role() RoleResolver
+	Screenwriter() ScreenwriterResolver
 }
 
 type DirectiveRoot struct {
@@ -117,9 +122,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetMe        func(childComplexity int) int
-		GetMovieByID func(childComplexity int, id string) int
-		GetUserByID  func(childComplexity int, id int) int
+		GetMe           func(childComplexity int) int
+		GetMovieByID    func(childComplexity int, id string) int
+		GetTalentsByIDs func(childComplexity int, ids []string) int
+		GetUserByID     func(childComplexity int, id int) int
 	}
 
 	RegisterResponse struct {
@@ -142,6 +148,12 @@ type ComplexityRoot struct {
 	}
 }
 
+type CinematographerResolver interface {
+	Talent(ctx context.Context, obj *model.Cinematographer) (*model.Talent, error)
+}
+type ComposerResolver interface {
+	Talent(ctx context.Context, obj *model.Composer) (*model.Talent, error)
+}
 type DirectorResolver interface {
 	Talent(ctx context.Context, obj *model.Director) (*model.Talent, error)
 }
@@ -150,10 +162,20 @@ type MutationResolver interface {
 	Register(ctx context.Context, input model.RegisterInput) (*model.RegisterResponse, error)
 	CreateMovie(ctx context.Context) (*model.CreateMovieResponse, error)
 }
+type ProducerResolver interface {
+	Talent(ctx context.Context, obj *model.Producer) (*model.Talent, error)
+}
 type QueryResolver interface {
 	GetMe(ctx context.Context) (*model.GetMeResponse, error)
 	GetMovieByID(ctx context.Context, id string) (*model.Movie, error)
+	GetTalentsByIDs(ctx context.Context, ids []string) ([]*model.Talent, error)
 	GetUserByID(ctx context.Context, id int) (*model.PublicProfile, error)
+}
+type RoleResolver interface {
+	Talent(ctx context.Context, obj *model.Role) (*model.Talent, error)
+}
+type ScreenwriterResolver interface {
+	Talent(ctx context.Context, obj *model.Screenwriter) (*model.Talent, error)
 }
 
 type executableSchema struct {
@@ -456,6 +478,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetMovieByID(childComplexity, args["id"].(string)), true
 
+	case "Query.getTalentsByIDs":
+		if e.complexity.Query.GetTalentsByIDs == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getTalentsByIDs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetTalentsByIDs(childComplexity, args["ids"].([]string)), true
+
 	case "Query.getUserByID":
 		if e.complexity.Query.GetUserByID == nil {
 			break
@@ -681,18 +715,16 @@ type Talent {
     id: String!
     name: String!
 }`, BuiltIn: false},
-	{Name: "../../api/movie.graphqls", Input: `
-
-type CreateMovieResponse {
-  id: String!
-}
-
-extend type Query {
+	{Name: "../../api/movie.graphqls", Input: `extend type Query {
   getMovieByID(id: String!): Movie!
 }
 
 extend type Mutation {
   createMovie: CreateMovieResponse!
+}
+
+type CreateMovieResponse {
+  id: String!
 }
 
 type Movie {
@@ -736,6 +768,11 @@ type Composer {
 type Role {
   talent: Talent!
   is_starring: Boolean!
+}`, BuiltIn: false},
+	{Name: "../../api/talent.graphqls", Input: `
+
+extend type Query {
+  getTalentsByIDs(ids: [String!]): [Talent!]
 }`, BuiltIn: false},
 	{Name: "../../api/user.graphqls", Input: `
 extend type Query {
@@ -808,6 +845,21 @@ func (ec *executionContext) field_Query_getMovieByID_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getTalentsByIDs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
+		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["ids"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_getUserByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -875,7 +927,7 @@ func (ec *executionContext) _Cinematographer_talent(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Talent, nil
+		return ec.resolvers.Cinematographer().Talent(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -896,8 +948,8 @@ func (ec *executionContext) fieldContext_Cinematographer_talent(ctx context.Cont
 	fc = &graphql.FieldContext{
 		Object:     "Cinematographer",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -925,7 +977,7 @@ func (ec *executionContext) _Composer_talent(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Talent, nil
+		return ec.resolvers.Composer().Talent(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -946,8 +998,8 @@ func (ec *executionContext) fieldContext_Composer_talent(ctx context.Context, fi
 	fc = &graphql.FieldContext{
 		Object:     "Composer",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2040,7 +2092,7 @@ func (ec *executionContext) _Producer_talent(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Talent, nil
+		return ec.resolvers.Producer().Talent(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2061,8 +2113,8 @@ func (ec *executionContext) fieldContext_Producer_talent(ctx context.Context, fi
 	fc = &graphql.FieldContext{
 		Object:     "Producer",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2645,6 +2697,64 @@ func (ec *executionContext) fieldContext_Query_getMovieByID(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getTalentsByIDs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getTalentsByIDs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetTalentsByIDs(rctx, fc.Args["ids"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Talent)
+	fc.Result = res
+	return ec.marshalOTalent2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getTalentsByIDs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Talent_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Talent_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Talent", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getTalentsByIDs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getUserByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getUserByID(ctx, field)
 	if err != nil {
@@ -2955,7 +3065,7 @@ func (ec *executionContext) _Role_talent(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Talent, nil
+		return ec.resolvers.Role().Talent(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2976,8 +3086,8 @@ func (ec *executionContext) fieldContext_Role_talent(ctx context.Context, field 
 	fc = &graphql.FieldContext{
 		Object:     "Role",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -3049,7 +3159,7 @@ func (ec *executionContext) _Screenwriter_talent(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Talent, nil
+		return ec.resolvers.Screenwriter().Talent(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3070,8 +3180,8 @@ func (ec *executionContext) fieldContext_Screenwriter_talent(ctx context.Context
 	fc = &graphql.FieldContext{
 		Object:     "Screenwriter",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -5041,10 +5151,41 @@ func (ec *executionContext) _Cinematographer(ctx context.Context, sel ast.Select
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Cinematographer")
 		case "talent":
-			out.Values[i] = ec._Cinematographer_talent(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Cinematographer_talent(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5080,10 +5221,41 @@ func (ec *executionContext) _Composer(ctx context.Context, sel ast.SelectionSet,
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Composer")
 		case "talent":
-			out.Values[i] = ec._Composer_talent(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Composer_talent(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5438,10 +5610,41 @@ func (ec *executionContext) _Producer(ctx context.Context, sel ast.SelectionSet,
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Producer")
 		case "talent":
-			out.Values[i] = ec._Producer_talent(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Producer_talent(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5640,6 +5843,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getTalentsByIDs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getTalentsByIDs(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "getUserByID":
 			field := field
 
@@ -5749,14 +5971,45 @@ func (ec *executionContext) _Role(ctx context.Context, sel ast.SelectionSet, obj
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Role")
 		case "talent":
-			out.Values[i] = ec._Role_talent(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Role_talent(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "is_starring":
 			out.Values[i] = ec._Role_is_starring(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5793,10 +6046,41 @@ func (ec *executionContext) _Screenwriter(ctx context.Context, sel ast.Selection
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Screenwriter")
 		case "talent":
-			out.Values[i] = ec._Screenwriter_talent(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Screenwriter_talent(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6952,6 +7236,44 @@ func (ec *executionContext) marshalOScreenwriter2ᚖgithubᚗcomᚋlukmandevᚋn
 	return ec._Screenwriter(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
 	if v == nil {
 		return nil, nil
@@ -6998,6 +7320,53 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOTalent2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Talent) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTalent2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

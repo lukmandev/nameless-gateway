@@ -96,3 +96,28 @@ models:
     fields:
       Talent:
         resolver: true
+  Screenwriter:
+    model: github.com/lukmandev/nameless/gateway/internal/api/model.Screenwriter
+    fields:
+      Talent:
+        resolver: true
+  Producer:
+    model: github.com/lukmandev/nameless/gateway/internal/api/model.Producer
+    fields:
+      Talent:
+        resolver: true
+  Cinematographer:
+    model: github.com/lukmandev/nameless/gateway/internal/api/model.Cinematographer
+    fields:
+      Talent:
+        resolver: true
+  Composer:
+    model: github.com/lukmandev/nameless/gateway/internal/api/model.Composer
+    fields:
+      Talent:
+        resolver: true
+  Role:
+    model: github.com/lukmandev/nameless/gateway/internal/api/model.Role
+    fields:
+      Talent:
+        resolver: true

@@ -1,15 +1,17 @@
 package model
 
+import "time"
+
 type Movie struct {
 	ID                string
 	Title             string
 	Description       string
 	PosterURL         string
 	AverageRating     float64
-	ReleaseDate       string
+	ReleaseDate       time.Time
 	DurationInSeconds int
 	MpaaRating        string
-	Keywords          []*string
+	Keywords          []string
 	Directors         []*Director
 	Screenwriters     []*Screenwriter
 	Producers         []*Producer

@@ -20,14 +20,23 @@ type MovieServiceClient interface {
 	GetByID(ctx context.Context, id string) (*model.Movie, error)
 }
 
-type ServiceClients struct {
-	AuthServiceClient AuthServiceClient
-	UserServiceClient UserServiceClient
+type TalentServiceClient interface {
+	GetByID(ctx context.Context, id string) (*model.Talent, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*model.Talent, error)
 }
 
-func New(authClient AuthServiceClient, userClient UserServiceClient) *ServiceClients {
+type ServiceClients struct {
+	AuthServiceClient   AuthServiceClient
+	UserServiceClient   UserServiceClient
+	TalentServiceClient TalentServiceClient
+	MovieServiceClient  MovieServiceClient
+}
+
+func New(authClient AuthServiceClient, userClient UserServiceClient, movieClient MovieServiceClient, talentClient TalentServiceClient) *ServiceClients {
 	return &ServiceClients{
-		AuthServiceClient: authClient,
-		UserServiceClient: userClient,
+		AuthServiceClient:   authClient,
+		UserServiceClient:   userClient,
+		TalentServiceClient: talentClient,
+		MovieServiceClient:  movieClient,
 	}
 }

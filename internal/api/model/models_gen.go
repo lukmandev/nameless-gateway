@@ -2,14 +2,6 @@
 
 package model
 
-type Cinematographer struct {
-	Talent *Talent `json:"talent"`
-}
-
-type Composer struct {
-	Talent *Talent `json:"talent"`
-}
-
 type CreateMovieResponse struct {
 	ID string `json:"id"`
 }
@@ -49,10 +41,6 @@ type Movie struct {
 type Mutation struct {
 }
 
-type Producer struct {
-	Talent *Talent `json:"talent"`
-}
-
 type Profile struct {
 	ID               int     `json:"id"`
 	Username         string  `json:"username"`
@@ -81,15 +69,6 @@ type RegisterInput struct {
 type RegisterResponse struct {
 	AccessToken string   `json:"accessToken"`
 	Profile     *Profile `json:"profile"`
-}
-
-type Role struct {
-	Talent     *Talent `json:"talent"`
-	IsStarring bool    `json:"is_starring"`
-}
-
-type Screenwriter struct {
-	Talent *Talent `json:"talent"`
 }
 
 type Talent struct {

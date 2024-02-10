@@ -1,15 +1,13 @@
-
-
-type CreateMovieResponse {
-  id: String!
-}
-
 extend type Query {
   getMovieByID(id: String!): Movie!
 }
 
 extend type Mutation {
   createMovie: CreateMovieResponse!
+}
+
+type CreateMovieResponse {
+  id: String!
 }
 
 type Movie {

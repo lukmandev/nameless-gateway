@@ -6,8 +6,12 @@ import (
 
 	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
 	userDesc "github.com/lukmandev/nameless-auth/pkg/user_v1"
+	movieDesc "github.com/lukmandev/nameless-movie/pkg/movie_v1"
+	talentDesc "github.com/lukmandev/nameless-movie/pkg/talent_v1"
 	"github.com/lukmandev/nameless/gateway/internal/client"
 	authClient "github.com/lukmandev/nameless/gateway/internal/client/auth"
+	movieClient "github.com/lukmandev/nameless/gateway/internal/client/movie"
+	talentClient "github.com/lukmandev/nameless/gateway/internal/client/talent"
 	userClient "github.com/lukmandev/nameless/gateway/internal/client/user"
 	"github.com/lukmandev/nameless/gateway/internal/config"
 	"github.com/lukmandev/nameless/gateway/internal/service"
@@ -21,8 +25,10 @@ type serviceProvider struct {
 
 	serviceClients *client.ServiceClients
 
-	authService service.AuthService
-	userService service.UserService
+	authService   service.AuthService
+	userService   service.UserService
+	movieService  service.MovieService
+	talentService service.TalentService
 }
 
 func newServiceProvider() *serviceProvider {
@@ -55,7 +61,7 @@ func (s *serviceProvider) ExternalServicesConfig() config.ExternalServicesConfig
 
 func (s *serviceProvider) ServiceClients() *client.ServiceClients {
 	if s.serviceClients == nil {
-		conn, err := grpc.Dial(
+		authConnection, err := grpc.Dial(
 			s.ExternalServicesConfig().AuthServiceHost(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
@@ -64,15 +70,28 @@ func (s *serviceProvider) ServiceClients() *client.ServiceClients {
 			log.Fatalf("Failed to connect to auth service: %s", err.Error())
 		}
 
-		fmt.Println("Connected to auth service")
+		movieConnection, err := grpc.Dial(
+			s.ExternalServicesConfig().MovieServiceHost(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			log.Fatalf("Failed to connect to movie service: %s", err.Error())
+		}
 
-		authServiceClient := authDesc.NewAuthV1Client(conn)
-		userServiceClient := userDesc.NewUserV1Client(conn)
+		fmt.Println("Connected to auth service")
+		fmt.Println("Connected to movie service")
+
+		authServiceClient := authDesc.NewAuthV1Client(authConnection)
+		userServiceClient := userDesc.NewUserV1Client(authConnection)
+		movieServiceClient := movieDesc.NewMovieV1Client(movieConnection)
+		talentServiceClient := talentDesc.NewTalentV1Client(movieConnection)
 
 		newAuthClient := authClient.New(authServiceClient)
 		newUserClient := userClient.New(userServiceClient)
+		newMovieClient := movieClient.New(movieServiceClient)
+		newTalentClient := talentClient.New(talentServiceClient)
 
-		s.serviceClients = client.New(newAuthClient, newUserClient)
+		s.serviceClients = client.New(newAuthClient, newUserClient, newMovieClient, newTalentClient)
 	}
 
 	return s.serviceClients

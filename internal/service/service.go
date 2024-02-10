@@ -19,3 +19,7 @@ type AuthService interface {
 	Register(ctx context.Context, input *model.RegisterInput) (*model.Profile, string, string, error)
 	GetMe(ctx context.Context, input *model.GetMeInput) (*model.Profile, error)
 }
+
+type TalentService interface {
+	GetByIDs(ctx context.Context, ids []string) ([]*model.Talent, error)
+}

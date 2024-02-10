@@ -1,30 +1,18 @@
 package api
 
 import (
-	"context"
-
 	"github.com/lukmandev/nameless/gateway/internal/api/auth"
-	"github.com/lukmandev/nameless/gateway/internal/api/model"
 	"github.com/lukmandev/nameless/gateway/internal/api/movie"
+	"github.com/lukmandev/nameless/gateway/internal/api/talent"
 	"github.com/lukmandev/nameless/gateway/internal/api/user"
 	"github.com/lukmandev/nameless/gateway/internal/service"
 )
 
 type Resolver struct {
-	authService service.AuthService
-	userService service.UserService
-}
-
-type directorResolver struct {
-	*Resolver
-}
-
-func (r *Resolver) Director() DirectorResolver {
-	return &directorResolver{r}
-}
-
-func (r *directorResolver) Talent(ctx context.Context, obj *model.Director) (*model.Talent, error) {
-	return nil, nil
+	authService   service.AuthService
+	userService   service.UserService
+	talentService service.TalentService
+	movieService  service.MovieService
 }
 
 func (r *Resolver) Mutation() MutationResolver {
@@ -43,25 +31,37 @@ func (r *Resolver) Query() QueryResolver {
 		UserQuery: user.UserQuery{
 			UserService: r.userService,
 		},
+		TalentQuery: talent.TalentQuery{
+			TalentService: r.talentService,
+		},
+		MovieQuery: movie.MovieQuery{
+			MovieService: r.movieService,
+		},
 	}
 }
 
 type Mutation struct {
 	auth.AuthMutation
 	movie.MovieMutation
+	talent.TalentMutation
 }
 type Query struct {
 	auth.AuthQuery
 	user.UserQuery
+	talent.TalentQuery
 	movie.MovieQuery
 }
 
 func NewResolver(
 	authService service.AuthService,
 	userService service.UserService,
+	movieService service.MovieService,
+	talentService service.TalentService,
 ) Resolver {
 	return Resolver{
-		authService: authService,
-		userService: userService,
+		authService:   authService,
+		userService:   userService,
+		movieService:  movieService,
+		talentService: talentService,
 	}
 }

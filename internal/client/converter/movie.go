@@ -18,15 +18,15 @@ func ToMovieFromMovieDesc(protoMovie *movieDesc.Movie) *model.Movie {
 		Description:       protoMovie.GetDescription(),
 		PosterURL:         protoMovie.GetPosterUrl(),
 		AverageRating:     protoMovie.GetAverageRating(),
-		ReleaseDate:       protoMovie.GetReleaseDate().AsTime().Format("2006-01-02"),
+		ReleaseDate:       protoMovie.GetReleaseDate().AsTime(),
 		DurationInSeconds: int(protoMovie.GetDurationInSeconds()),
 		MpaaRating:        protoMovie.GetMpaaRating(),
 	}
 
 	// Convert Keywords
-	serviceMovie.Keywords = make([]*string, len(protoMovie.GetKeywords()))
+	serviceMovie.Keywords = make([]string, len(protoMovie.GetKeywords()))
 	for i, kw := range protoMovie.GetKeywords() {
-		serviceMovie.Keywords[i] = &kw
+		serviceMovie.Keywords[i] = kw
 	}
 
 	// Convert Directors, Screenwriters, Producers, Cinematographers, Composers, Roles
