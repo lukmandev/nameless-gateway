@@ -6,7 +6,7 @@ import (
 	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
-func ToGetUserByIdFromService(id int64) *userDesc.GetRequest {
+func ToGetUserByIDFromService(id int64) *userDesc.GetRequest {
 	return &userDesc.GetRequest{
 		Id: id,
 	}

@@ -1,0 +1,56 @@
+
+
+type CreateMovieResponse {
+  id: String!
+}
+
+extend type Query {
+  getMovieByID(id: String!): Movie!
+}
+
+extend type Mutation {
+  createMovie: CreateMovieResponse!
+}
+
+type Movie {
+  id: String
+  title: String
+  description: String
+  poster_url: String
+  average_rating: Float
+  release_date: String
+  duration_in_seconds: Int
+  mpaa_rating: String
+  keywords: [String]
+  directors: [Director]
+  screenwriters: [Screenwriter]
+  producers: [Producer]
+  cinematographers: [Cinematographer]
+  composers: [Composer]
+  roles: [Role]
+}
+
+type Director {
+  talent: Talent!
+}
+
+type Screenwriter {
+  talent: Talent!
+}
+
+type Producer {
+  talent: Talent!
+}
+
+type Cinematographer {
+  talent: Talent!
+}
+
+type Composer {
+  talent: Talent!
+}
+
+type Role {
+  talent: Talent!
+  is_starring: Boolean!
+}

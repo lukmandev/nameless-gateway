@@ -2,6 +2,18 @@
 
 package model
 
+type Cinematographer struct {
+	Talent *Talent `json:"talent"`
+}
+
+type Composer struct {
+	Talent *Talent `json:"talent"`
+}
+
+type CreateMovieResponse struct {
+	ID string `json:"id"`
+}
+
 type GetMeResponse struct {
 	Profile *Profile `json:"profile"`
 }
@@ -16,7 +28,29 @@ type LoginResponse struct {
 	Profile     *Profile `json:"profile"`
 }
 
+type Movie struct {
+	ID                *string            `json:"id,omitempty"`
+	Title             *string            `json:"title,omitempty"`
+	Description       *string            `json:"description,omitempty"`
+	PosterURL         *string            `json:"poster_url,omitempty"`
+	AverageRating     *float64           `json:"average_rating,omitempty"`
+	ReleaseDate       *string            `json:"release_date,omitempty"`
+	DurationInSeconds *int               `json:"duration_in_seconds,omitempty"`
+	MpaaRating        *string            `json:"mpaa_rating,omitempty"`
+	Keywords          []*string          `json:"keywords,omitempty"`
+	Directors         []*Director        `json:"directors,omitempty"`
+	Screenwriters     []*Screenwriter    `json:"screenwriters,omitempty"`
+	Producers         []*Producer        `json:"producers,omitempty"`
+	Cinematographers  []*Cinematographer `json:"cinematographers,omitempty"`
+	Composers         []*Composer        `json:"composers,omitempty"`
+	Roles             []*Role            `json:"roles,omitempty"`
+}
+
 type Mutation struct {
+}
+
+type Producer struct {
+	Talent *Talent `json:"talent"`
 }
 
 type Profile struct {
@@ -47,4 +81,18 @@ type RegisterInput struct {
 type RegisterResponse struct {
 	AccessToken string   `json:"accessToken"`
 	Profile     *Profile `json:"profile"`
+}
+
+type Role struct {
+	Talent     *Talent `json:"talent"`
+	IsStarring bool    `json:"is_starring"`
+}
+
+type Screenwriter struct {
+	Talent *Talent `json:"talent"`
+}
+
+type Talent struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }

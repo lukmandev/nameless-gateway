@@ -1,4 +1,4 @@
 
 extend type Query {
-  getById(input: Int!): PublicProfile!
+  getUserByID(id: Int!): PublicProfile!
 }

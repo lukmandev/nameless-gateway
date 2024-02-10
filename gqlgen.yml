@@ -90,3 +90,9 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+      
+  Director:
+    model: github.com/lukmandev/nameless/gateway/internal/api/model.Director
+    fields:
+      Talent:
+        resolver: true

@@ -15,3 +15,8 @@ type PublicProfile {
     avatar_url: String
     registration_date: String!
 }
+
+type Talent {
+    id: String!
+    name: String!
+}

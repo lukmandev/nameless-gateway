@@ -16,6 +16,10 @@ type UserServiceClient interface {
 	GetByID(ctx context.Context, id int64) (*model.PublicProfile, error)
 }
 
+type MovieServiceClient interface {
+	GetByID(ctx context.Context, id string) (*model.Movie, error)
+}
+
 type ServiceClients struct {
 	AuthServiceClient AuthServiceClient
 	UserServiceClient UserServiceClient
