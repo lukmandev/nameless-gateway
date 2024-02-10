@@ -11,7 +11,8 @@ type UserService interface {
 }
 
 type MovieService interface {
-	GetByID(ctx context.Context, id string) (*model.Movie, error)
+	GetByID(ctx context.Context, id string, userID int64) (*model.Movie, error)
+	GetRecommendations(ctx context.Context, limit int32, userID int64) ([]*model.Movie, error)
 }
 
 type AuthService interface {
@@ -22,4 +23,5 @@ type AuthService interface {
 
 type TalentService interface {
 	GetByIDs(ctx context.Context, ids []string) ([]*model.Talent, error)
+	GetByID(ctx context.Context, ids string) (*model.Talent, error)
 }

@@ -21,21 +21,21 @@ type LoginResponse struct {
 }
 
 type Movie struct {
-	ID                *string            `json:"id,omitempty"`
-	Title             *string            `json:"title,omitempty"`
-	Description       *string            `json:"description,omitempty"`
-	PosterURL         *string            `json:"poster_url,omitempty"`
-	AverageRating     *float64           `json:"average_rating,omitempty"`
-	ReleaseDate       *string            `json:"release_date,omitempty"`
-	DurationInSeconds *int               `json:"duration_in_seconds,omitempty"`
-	MpaaRating        *string            `json:"mpaa_rating,omitempty"`
-	Keywords          []*string          `json:"keywords,omitempty"`
-	Directors         []*Director        `json:"directors,omitempty"`
-	Screenwriters     []*Screenwriter    `json:"screenwriters,omitempty"`
-	Producers         []*Producer        `json:"producers,omitempty"`
-	Cinematographers  []*Cinematographer `json:"cinematographers,omitempty"`
-	Composers         []*Composer        `json:"composers,omitempty"`
-	Roles             []*Role            `json:"roles,omitempty"`
+	ID                string             `json:"id"`
+	Title             string             `json:"title"`
+	Description       string             `json:"description"`
+	PosterURL         string             `json:"poster_url"`
+	AverageRating     float64            `json:"average_rating"`
+	ReleaseDate       string             `json:"release_date"`
+	DurationInSeconds int                `json:"duration_in_seconds"`
+	MpaaRating        string             `json:"mpaa_rating"`
+	Keywords          []*string          `json:"keywords"`
+	Directors         []*Director        `json:"directors"`
+	Screenwriters     []*Screenwriter    `json:"screenwriters"`
+	Producers         []*Producer        `json:"producers"`
+	Cinematographers  []*Cinematographer `json:"cinematographers"`
+	Composers         []*Composer        `json:"composers"`
+	Roles             []*Role            `json:"roles"`
 }
 
 type Mutation struct {

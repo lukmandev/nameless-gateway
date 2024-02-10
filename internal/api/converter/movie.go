@@ -40,14 +40,14 @@ func ToMovieFromService(input *serviceModel.Movie) *model.Movie {
 	}
 
 	return &model.Movie{
-		ID:                &input.ID,
-		Title:             &input.Title,
-		Description:       &input.Description,
-		PosterURL:         &input.PosterURL,
-		AverageRating:     &input.AverageRating,
-		ReleaseDate:       &releaseDate,
-		DurationInSeconds: &durationInSeconds,
-		MpaaRating:        &input.MpaaRating,
+		ID:                input.ID,
+		Title:             input.Title,
+		Description:       input.Description,
+		PosterURL:         input.PosterURL,
+		AverageRating:     input.AverageRating,
+		ReleaseDate:       releaseDate,
+		DurationInSeconds: durationInSeconds,
+		MpaaRating:        input.MpaaRating,
 		Keywords:          keywords,
 		Directors:         directors,
 		Cinematographers:  cinematographers,
@@ -56,6 +56,15 @@ func ToMovieFromService(input *serviceModel.Movie) *model.Movie {
 		Roles:             roles,
 		Screenwriters:     screenwriters,
 	}
+}
+
+func ToMovieFromServiceList(input []*serviceModel.Movie) []*model.Movie {
+	result := make([]*model.Movie, len(input))
+	for i := range input {
+		result[i] = ToMovieFromService(input[i])
+	}
+
+	return result
 }
 
 func ToDirectorFromService(input *serviceModel.Director) *model.Director {

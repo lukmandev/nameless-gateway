@@ -11,6 +11,12 @@ func ToGetMovieByIDFromService(id string) *movieDesc.GetByIDRequest {
 	}
 }
 
+func ToGetRecommendationsInputFromService(limit int32) *movieDesc.GetRecommendationsRequest {
+	return &movieDesc.GetRecommendationsRequest{
+		Limit: limit,
+	}
+}
+
 func ToMovieFromMovieDesc(protoMovie *movieDesc.Movie) *model.Movie {
 	serviceMovie := &model.Movie{
 		ID:                protoMovie.GetId(),
@@ -38,6 +44,15 @@ func ToMovieFromMovieDesc(protoMovie *movieDesc.Movie) *model.Movie {
 	serviceMovie.Roles = ToRolesFromMovieDesc(protoMovie.GetRoles())
 
 	return serviceMovie
+}
+
+func ToMovieFromMovieDescList(input []*movieDesc.Movie) []*model.Movie {
+	result := make([]*model.Movie, len(input))
+	for i := range input {
+		result[i] = ToMovieFromMovieDesc(input[i])
+	}
+
+	return result
 }
 
 func ToDirectorFromMovieDesc(protoDirector *movieDesc.Director) *model.Director {

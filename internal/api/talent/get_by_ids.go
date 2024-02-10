@@ -7,10 +7,10 @@ import (
 	"github.com/lukmandev/nameless/gateway/internal/api/model"
 )
 
-func (q TalentQuery) GetTalentsByIDs(ctx context.Context, ids []string) ([]*model.Talent, error) {
-	talents, err := q.TalentService.GetByIDs(ctx, ids)
+func (q TalentQuery) GetTalentByID(ctx context.Context, ids string) (*model.Talent, error) {
+	talent, err := q.TalentService.GetByID(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	return converter.ToTalentFromServiceList(talents), nil
+	return converter.ToTalentFromService(talent), nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func (m AuthMutation) Login(ctx context.Context, input model.LoginInput) (*model.LoginResponse, error) {
-	cookieAccess := middleware.CookieAccessFromCtx(ctx)
+	cookieAccess := middleware.GetCookieAccessFromCtx(ctx)
 	profile, refreshToken, accessToken, err := m.AuthService.Login(ctx, converter.ToLoginInputFromAuthHandler(input))
 	if err != nil {
 		return nil, errors.New("SOME ERROR error")

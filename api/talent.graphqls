@@ -1,5 +1,5 @@
 
 
 extend type Query {
-  getTalentsByIDs(ids: [String!]): [Talent!]
+  getTalentByID(ids: String!): Talent!
 }

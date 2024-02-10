@@ -122,10 +122,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetMe           func(childComplexity int) int
-		GetMovieByID    func(childComplexity int, id string) int
-		GetTalentsByIDs func(childComplexity int, ids []string) int
-		GetUserByID     func(childComplexity int, id int) int
+		GetMe                   func(childComplexity int) int
+		GetMovieByID            func(childComplexity int, id string) int
+		GetMovieRecommendations func(childComplexity int, limit int) int
+		GetTalentByID           func(childComplexity int, ids string) int
+		GetUserByID             func(childComplexity int, id int) int
 	}
 
 	RegisterResponse struct {
@@ -168,7 +169,8 @@ type ProducerResolver interface {
 type QueryResolver interface {
 	GetMe(ctx context.Context) (*model.GetMeResponse, error)
 	GetMovieByID(ctx context.Context, id string) (*model.Movie, error)
-	GetTalentsByIDs(ctx context.Context, ids []string) ([]*model.Talent, error)
+	GetMovieRecommendations(ctx context.Context, limit int) ([]*model.Movie, error)
+	GetTalentByID(ctx context.Context, ids string) (*model.Talent, error)
 	GetUserByID(ctx context.Context, id int) (*model.PublicProfile, error)
 }
 type RoleResolver interface {
@@ -478,17 +480,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetMovieByID(childComplexity, args["id"].(string)), true
 
-	case "Query.getTalentsByIDs":
-		if e.complexity.Query.GetTalentsByIDs == nil {
+	case "Query.getMovieRecommendations":
+		if e.complexity.Query.GetMovieRecommendations == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getTalentsByIDs_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_getMovieRecommendations_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.GetTalentsByIDs(childComplexity, args["ids"].([]string)), true
+		return e.complexity.Query.GetMovieRecommendations(childComplexity, args["limit"].(int)), true
+
+	case "Query.getTalentByID":
+		if e.complexity.Query.GetTalentByID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getTalentByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetTalentByID(childComplexity, args["ids"].(string)), true
 
 	case "Query.getUserByID":
 		if e.complexity.Query.GetUserByID == nil {
@@ -717,6 +731,7 @@ type Talent {
 }`, BuiltIn: false},
 	{Name: "../../api/movie.graphqls", Input: `extend type Query {
   getMovieByID(id: String!): Movie!
+  getMovieRecommendations(limit: Int!): [Movie!]!
 }
 
 extend type Mutation {
@@ -728,21 +743,21 @@ type CreateMovieResponse {
 }
 
 type Movie {
-  id: String
-  title: String
-  description: String
-  poster_url: String
-  average_rating: Float
-  release_date: String
-  duration_in_seconds: Int
-  mpaa_rating: String
-  keywords: [String]
-  directors: [Director]
-  screenwriters: [Screenwriter]
-  producers: [Producer]
-  cinematographers: [Cinematographer]
-  composers: [Composer]
-  roles: [Role]
+  id: String!
+  title: String!
+  description: String!
+  poster_url: String!
+  average_rating: Float!
+  release_date: String!
+  duration_in_seconds: Int!
+  mpaa_rating: String!
+  keywords: [String]!
+  directors: [Director]!
+  screenwriters: [Screenwriter]!
+  producers: [Producer]!
+  cinematographers: [Cinematographer]!
+  composers: [Composer]!
+  roles: [Role]!
 }
 
 type Director {
@@ -772,7 +787,7 @@ type Role {
 	{Name: "../../api/talent.graphqls", Input: `
 
 extend type Query {
-  getTalentsByIDs(ids: [String!]): [Talent!]
+  getTalentByID(ids: String!): Talent!
 }`, BuiltIn: false},
 	{Name: "../../api/user.graphqls", Input: `
 extend type Query {
@@ -845,13 +860,28 @@ func (ec *executionContext) field_Query_getMovieByID_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getTalentsByIDs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_getMovieRecommendations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 []string
+	var arg0 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getTalentByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
 	if tmp, ok := rawArgs["ids"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
-		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1288,11 +1318,14 @@ func (ec *executionContext) _Movie_id(ctx context.Context, field graphql.Collect
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1329,11 +1362,14 @@ func (ec *executionContext) _Movie_title(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_title(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1370,11 +1406,14 @@ func (ec *executionContext) _Movie_description(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1411,11 +1450,14 @@ func (ec *executionContext) _Movie_poster_url(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_poster_url(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1452,11 +1494,14 @@ func (ec *executionContext) _Movie_average_rating(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_average_rating(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1493,11 +1538,14 @@ func (ec *executionContext) _Movie_release_date(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_release_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1534,11 +1582,14 @@ func (ec *executionContext) _Movie_duration_in_seconds(ctx context.Context, fiel
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_duration_in_seconds(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1575,11 +1626,14 @@ func (ec *executionContext) _Movie_mpaa_rating(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_mpaa_rating(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1616,11 +1670,14 @@ func (ec *executionContext) _Movie_keywords(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*string)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_keywords(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1657,11 +1714,14 @@ func (ec *executionContext) _Movie_directors(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Director)
 	fc.Result = res
-	return ec.marshalODirector2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx, field.Selections, res)
+	return ec.marshalNDirector2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_directors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1702,11 +1762,14 @@ func (ec *executionContext) _Movie_screenwriters(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Screenwriter)
 	fc.Result = res
-	return ec.marshalOScreenwriter2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx, field.Selections, res)
+	return ec.marshalNScreenwriter2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_screenwriters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1747,11 +1810,14 @@ func (ec *executionContext) _Movie_producers(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Producer)
 	fc.Result = res
-	return ec.marshalOProducer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx, field.Selections, res)
+	return ec.marshalNProducer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_producers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1792,11 +1858,14 @@ func (ec *executionContext) _Movie_cinematographers(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Cinematographer)
 	fc.Result = res
-	return ec.marshalOCinematographer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx, field.Selections, res)
+	return ec.marshalNCinematographer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_cinematographers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1837,11 +1906,14 @@ func (ec *executionContext) _Movie_composers(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Composer)
 	fc.Result = res
-	return ec.marshalOComposer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx, field.Selections, res)
+	return ec.marshalNComposer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_composers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1882,11 +1954,14 @@ func (ec *executionContext) _Movie_roles(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Role)
 	fc.Result = res
-	return ec.marshalORole2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx, field.Selections, res)
+	return ec.marshalNRole2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Movie_roles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2697,8 +2772,8 @@ func (ec *executionContext) fieldContext_Query_getMovieByID(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getTalentsByIDs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getTalentsByIDs(ctx, field)
+func (ec *executionContext) _Query_getMovieRecommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMovieRecommendations(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2711,21 +2786,111 @@ func (ec *executionContext) _Query_getTalentsByIDs(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetTalentsByIDs(rctx, fc.Args["ids"].([]string))
+		return ec.resolvers.Query().GetMovieRecommendations(rctx, fc.Args["limit"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Talent)
+	res := resTmp.([]*model.Movie)
 	fc.Result = res
-	return ec.marshalOTalent2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalentᚄ(ctx, field.Selections, res)
+	return ec.marshalNMovie2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐMovieᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getTalentsByIDs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getMovieRecommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Movie_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Movie_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Movie_description(ctx, field)
+			case "poster_url":
+				return ec.fieldContext_Movie_poster_url(ctx, field)
+			case "average_rating":
+				return ec.fieldContext_Movie_average_rating(ctx, field)
+			case "release_date":
+				return ec.fieldContext_Movie_release_date(ctx, field)
+			case "duration_in_seconds":
+				return ec.fieldContext_Movie_duration_in_seconds(ctx, field)
+			case "mpaa_rating":
+				return ec.fieldContext_Movie_mpaa_rating(ctx, field)
+			case "keywords":
+				return ec.fieldContext_Movie_keywords(ctx, field)
+			case "directors":
+				return ec.fieldContext_Movie_directors(ctx, field)
+			case "screenwriters":
+				return ec.fieldContext_Movie_screenwriters(ctx, field)
+			case "producers":
+				return ec.fieldContext_Movie_producers(ctx, field)
+			case "cinematographers":
+				return ec.fieldContext_Movie_cinematographers(ctx, field)
+			case "composers":
+				return ec.fieldContext_Movie_composers(ctx, field)
+			case "roles":
+				return ec.fieldContext_Movie_roles(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Movie", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getMovieRecommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getTalentByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getTalentByID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetTalentByID(rctx, fc.Args["ids"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Talent)
+	fc.Result = res
+	return ec.marshalNTalent2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getTalentByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2748,7 +2913,7 @@ func (ec *executionContext) fieldContext_Query_getTalentsByIDs(ctx context.Conte
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getTalentsByIDs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getTalentByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5484,34 +5649,79 @@ func (ec *executionContext) _Movie(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = graphql.MarshalString("Movie")
 		case "id":
 			out.Values[i] = ec._Movie_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "title":
 			out.Values[i] = ec._Movie_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "description":
 			out.Values[i] = ec._Movie_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "poster_url":
 			out.Values[i] = ec._Movie_poster_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "average_rating":
 			out.Values[i] = ec._Movie_average_rating(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "release_date":
 			out.Values[i] = ec._Movie_release_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "duration_in_seconds":
 			out.Values[i] = ec._Movie_duration_in_seconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "mpaa_rating":
 			out.Values[i] = ec._Movie_mpaa_rating(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "keywords":
 			out.Values[i] = ec._Movie_keywords(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "directors":
 			out.Values[i] = ec._Movie_directors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "screenwriters":
 			out.Values[i] = ec._Movie_screenwriters(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "producers":
 			out.Values[i] = ec._Movie_producers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "cinematographers":
 			out.Values[i] = ec._Movie_cinematographers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "composers":
 			out.Values[i] = ec._Movie_composers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "roles":
 			out.Values[i] = ec._Movie_roles(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5843,7 +6053,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getTalentsByIDs":
+		case "getMovieRecommendations":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5852,7 +6062,32 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getTalentsByIDs(ctx, field)
+				res = ec._Query_getMovieRecommendations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getTalentByID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getTalentByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -6489,6 +6724,82 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNCinematographer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx context.Context, sel ast.SelectionSet, v []*model.Cinematographer) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOCinematographer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalNComposer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx context.Context, sel ast.SelectionSet, v []*model.Composer) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOComposer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalNCreateMovieResponse2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCreateMovieResponse(ctx context.Context, sel ast.SelectionSet, v model.CreateMovieResponse) graphql.Marshaler {
 	return ec._CreateMovieResponse(ctx, sel, &v)
 }
@@ -6501,6 +6812,59 @@ func (ec *executionContext) marshalNCreateMovieResponse2ᚖgithubᚗcomᚋlukman
 		return graphql.Null
 	}
 	return ec._CreateMovieResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDirector2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx context.Context, sel ast.SelectionSet, v []*model.Director) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODirector2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) marshalNGetMeResponse2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐGetMeResponse(ctx context.Context, sel ast.SelectionSet, v model.GetMeResponse) graphql.Marshaler {
@@ -6555,6 +6919,50 @@ func (ec *executionContext) marshalNMovie2githubᚗcomᚋlukmandevᚋnamelessᚋ
 	return ec._Movie(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNMovie2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐMovieᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Movie) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMovie2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐMovie(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNMovie2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐMovie(ctx context.Context, sel ast.SelectionSet, v *model.Movie) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -6563,6 +6971,44 @@ func (ec *executionContext) marshalNMovie2ᚖgithubᚗcomᚋlukmandevᚋnameless
 		return graphql.Null
 	}
 	return ec._Movie(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProducer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx context.Context, sel ast.SelectionSet, v []*model.Producer) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProducer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProfile(ctx context.Context, sel ast.SelectionSet, v *model.Profile) graphql.Marshaler {
@@ -6608,6 +7054,82 @@ func (ec *executionContext) marshalNRegisterResponse2ᚖgithubᚗcomᚋlukmandev
 	return ec._RegisterResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRole2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v []*model.Role) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalORole2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalNScreenwriter2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx context.Context, sel ast.SelectionSet, v []*model.Screenwriter) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOScreenwriter2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6621,6 +7143,32 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTalent2githubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalent(ctx context.Context, sel ast.SelectionSet, v model.Talent) graphql.Marshaler {
@@ -6916,93 +7464,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalOCinematographer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx context.Context, sel ast.SelectionSet, v []*model.Cinematographer) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOCinematographer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) marshalOCinematographer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐCinematographer(ctx context.Context, sel ast.SelectionSet, v *model.Cinematographer) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Cinematographer(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOComposer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx context.Context, sel ast.SelectionSet, v []*model.Composer) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOComposer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalOComposer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐComposer(ctx context.Context, sel ast.SelectionSet, v *model.Composer) graphql.Marshaler {
@@ -7012,125 +7478,11 @@ func (ec *executionContext) marshalOComposer2ᚖgithubᚗcomᚋlukmandevᚋnamel
 	return ec._Composer(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODirector2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx context.Context, sel ast.SelectionSet, v []*model.Director) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalODirector2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) marshalODirector2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐDirector(ctx context.Context, sel ast.SelectionSet, v *model.Director) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Director(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalFloatContext(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	res := graphql.MarshalFloatContext(*v)
-	return graphql.WrapContextMarshaler(ctx, res)
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	res := graphql.MarshalInt(*v)
-	return res
-}
-
-func (ec *executionContext) marshalOProducer2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx context.Context, sel ast.SelectionSet, v []*model.Producer) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOProducer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalOProducer2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐProducer(ctx context.Context, sel ast.SelectionSet, v *model.Producer) graphql.Marshaler {
@@ -7140,47 +7492,6 @@ func (ec *executionContext) marshalOProducer2ᚖgithubᚗcomᚋlukmandevᚋnamel
 	return ec._Producer(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORole2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v []*model.Role) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalORole2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v *model.Role) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -7188,122 +7499,11 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋlukmandevᚋnameless�
 	return ec._Role(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOScreenwriter2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx context.Context, sel ast.SelectionSet, v []*model.Screenwriter) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOScreenwriter2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) marshalOScreenwriter2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐScreenwriter(ctx context.Context, sel ast.SelectionSet, v *model.Screenwriter) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Screenwriter(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]string, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
-	}
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
@@ -7320,53 +7520,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOTalent2ᚕᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Talent) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTalent2ᚖgithubᚗcomᚋlukmandevᚋnamelessᚋgatewayᚋinternalᚋapiᚋmodelᚐTalent(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

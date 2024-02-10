@@ -2,9 +2,14 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/lukmandev/nameless/gateway/internal/api/converter"
+	"github.com/lukmandev/nameless/gateway/internal/api/model"
+	"github.com/lukmandev/nameless/gateway/internal/service"
 )
 
 var (
@@ -54,7 +59,21 @@ func AuthMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-func CookieAccessFromCtx(ctx context.Context) *CookieAccess {
+func GetCookieAccessFromCtx(ctx context.Context) *CookieAccess {
 	access := ctx.Value(CookieAccessKey).(*CookieAccess)
 	return access
+}
+
+func GetUser(ctx context.Context, authService service.AuthService) (*model.Profile, error) {
+	access, ok := ctx.Value(CookieAccessKey).(*CookieAccess)
+	if !ok {
+		return nil, errors.New("not found")
+	}
+
+	profile, err := authService.GetMe(ctx, converter.ToGetMeInputFromAuthHandler(access.AccessToken))
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ToProfileFromService(profile), nil
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (q AuthQuery) GetMe(ctx context.Context) (*apiModel.GetMeResponse, error) {
-	cookieAccess := middleware.CookieAccessFromCtx(ctx)
+	cookieAccess := middleware.GetCookieAccessFromCtx(ctx)
 
 	profile, err := q.AuthService.GetMe(ctx, converter.ToGetMeInputFromAuthHandler(cookieAccess.AccessToken))
 	if err != nil {

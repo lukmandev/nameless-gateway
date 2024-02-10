@@ -35,6 +35,7 @@ func (r *Resolver) Query() QueryResolver {
 			TalentService: r.talentService,
 		},
 		MovieQuery: movie.MovieQuery{
+			AuthService:  r.authService,
 			MovieService: r.movieService,
 		},
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 func (m AuthMutation) Register(ctx context.Context, input model.RegisterInput) (*model.RegisterResponse, error) {
-	cookieAccess := middleware.CookieAccessFromCtx(ctx)
+	cookieAccess := middleware.GetCookieAccessFromCtx(ctx)
 	profile, refreshToken, accessToken, err := m.AuthService.Register(ctx, converter.ToRegisterInputFromAuthHandler(input))
 	if err != nil {
 		return nil, errors.New("SOME ERROR error")

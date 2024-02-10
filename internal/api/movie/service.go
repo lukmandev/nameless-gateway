@@ -8,4 +8,5 @@ type MovieMutation struct {
 
 type MovieQuery struct {
 	MovieService service.MovieService
+	AuthService  service.AuthService
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/lukmandev/nameless/gateway/internal/service/model"
 )
 
-func (s *serv) GetByID(ctx context.Context, id string) (*model.Movie, error) {
-	profile, err := s.movieClient.GetByID(ctx, id)
-	return profile, err
+func (s *serv) GetByID(ctx context.Context, id string, userID int64) (*model.Movie, error) {
+	movie, err := s.movieClient.GetByID(ctx, id, userID)
+	return movie, err
 }
