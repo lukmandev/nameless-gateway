@@ -37,3 +37,8 @@ test-coverage:
 
 prepare:
 	go env -w GOPRIVATE=github.com/lukmandev/*
+
+container-up:
+	docker compose -f ./deployments/docker-compose.yml up
+container-down:
+	docker compose -f ./deployments/docker-compose.yml down

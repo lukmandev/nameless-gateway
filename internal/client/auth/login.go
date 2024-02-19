@@ -6,6 +6,9 @@ import (
 	authDesc "github.com/lukmandev/nameless-auth/pkg/auth_v1"
 	"github.com/lukmandev/nameless/gateway/internal/client/converter"
 	"github.com/lukmandev/nameless/gateway/internal/service/model"
+	"github.com/lukmandev/nameless/gateway/internal/service/syserrors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (c *cli) Login(ctx context.Context, input *model.LoginInput) (*model.Profile, string, string, error) {
@@ -16,7 +19,13 @@ func (c *cli) Login(ctx context.Context, input *model.LoginInput) (*model.Profil
 		},
 	})
 	if err != nil {
-		return nil, "", "", err
+		status, ok := status.FromError(err)
+		if ok {
+			if status.Code() == codes.InvalidArgument {
+				return nil, "", "", syserrors.ErrWrongCredentials
+			}
+		}
+		return nil, "", "", syserrors.ErrUnknown
 	}
 
 	return converter.ToProfileFromAuthDesc(res.GetProfile()), res.GetRefreshToken(), res.GetAccessToken(), nil
