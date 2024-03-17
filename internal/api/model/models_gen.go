@@ -2,26 +2,76 @@
 
 package model
 
+type CreateMovieResponse struct {
+	ID string `json:"id"`
+}
+
 type GetMeResponse struct {
-	Profile *User `json:"profile"`
+	Profile *Profile `json:"profile"`
 }
 
 type LoginInput struct {
-	Name string `json:"name"`
+	EmailOrUsername string `json:"emailOrUsername"`
+	Password        string `json:"password"`
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"accessToken"`
-	Profile     *User  `json:"profile"`
+	AccessToken string   `json:"accessToken"`
+	Profile     *Profile `json:"profile"`
+}
+
+type Movie struct {
+	ID                string             `json:"id"`
+	Title             string             `json:"title"`
+	Description       string             `json:"description"`
+	PosterURL         string             `json:"poster_url"`
+	AverageRating     float64            `json:"average_rating"`
+	ReleaseDate       string             `json:"release_date"`
+	DurationInSeconds int                `json:"duration_in_seconds"`
+	MpaaRating        string             `json:"mpaa_rating"`
+	Keywords          []*string          `json:"keywords"`
+	Directors         []*Director        `json:"directors"`
+	Screenwriters     []*Screenwriter    `json:"screenwriters"`
+	Producers         []*Producer        `json:"producers"`
+	Cinematographers  []*Cinematographer `json:"cinematographers"`
+	Composers         []*Composer        `json:"composers"`
+	Roles             []*Role            `json:"roles"`
 }
 
 type Mutation struct {
 }
 
+type Profile struct {
+	ID               int     `json:"id"`
+	Username         string  `json:"username"`
+	Email            string  `json:"email"`
+	AvatarURL        *string `json:"avatar_url,omitempty"`
+	RegistrationDate string  `json:"registration_date"`
+	Verified         bool    `json:"verified"`
+}
+
+type PublicProfile struct {
+	ID               int     `json:"id"`
+	Username         string  `json:"username"`
+	AvatarURL        *string `json:"avatar_url,omitempty"`
+	RegistrationDate string  `json:"registration_date"`
+}
+
 type Query struct {
 }
 
-type User struct {
+type RegisterInput struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type RegisterResponse struct {
+	AccessToken string   `json:"accessToken"`
+	Profile     *Profile `json:"profile"`
+}
+
+type Talent struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }

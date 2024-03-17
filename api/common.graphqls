@@ -1,0 +1,22 @@
+
+
+type Profile {
+    id: Int!
+    username: String!
+    email: String!
+    avatar_url: String
+    registration_date: String!
+    verified: Boolean!
+}
+
+type PublicProfile {
+    id: Int!
+    username: String!
+    avatar_url: String
+    registration_date: String!
+}
+
+type Talent {
+    id: String!
+    name: String!
+}

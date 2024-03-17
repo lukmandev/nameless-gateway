@@ -1,19 +1,27 @@
-type User {
-  id: ID!
-  name: String! 
-}
 
 input LoginInput {
-  name: String!
+  emailOrUsername: String!
+  password: String!
 }
 
 type LoginResponse {
   accessToken: String!
-  profile: User!
+  profile: Profile!
+}
+
+input RegisterInput {
+  email: String!
+  username: String!
+  password: String!
+}
+
+type RegisterResponse {
+  accessToken: String!
+  profile: Profile!
 }
 
 type GetMeResponse {
-  profile: User!
+  profile: Profile!
 }
 
 extend type Query {
@@ -22,4 +30,5 @@ extend type Query {
 
 extend type Mutation {
   login(input: LoginInput!): LoginResponse!
+  register(input: RegisterInput!): RegisterResponse!
 }

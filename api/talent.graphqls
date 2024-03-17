@@ -1,0 +1,5 @@
+
+
+extend type Query {
+  getTalentByID(ids: String!): Talent!
+}
